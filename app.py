@@ -30,17 +30,14 @@ def getSBOL():
         create_vector(doc, vector_data)
         create_insert(doc, insert_data)
         part = attach_backbone(doc, insert_data, first_restriction_site_data, True)
+        part2 = attach_backbone(doc, "tagc", second_restriction_site_data, True)
 
-        try:
-            part2 = attach_backbone(doc, "tagc", second_restriction_site_data, True)
-            assembly_plan = create_assembly_plan(doc, [part, part2], vector_data, first_restriction_site_data)
-            assembly_plan.document.write("test2.xml")
-        except Exception as e:
-            print(e)
-        # create_first_restriction_site(doc, first_restriction_site_data)
-        # create_second_restriction_site(doc, second_restriction_site_data)
-        
-        # doc.write("test.xml")
+        part_arr = [part, part2]
+
+        enzyme = ed_restriction_enzyme(first_restriction_site_data)
+
+        assembly_plan = create_assembly_plan(doc, part_arr, vector_data, enzyme)
+        assembly_plan.document.write("test2.xml")
         
         if SBOL_data is None:
             raise ValueError("No JSON received")
@@ -51,12 +48,12 @@ def getSBOL():
         
 
         
-    # sbol_data = send_file("test2.xml", 
-    #                  mimetype='application/xml', 
-    #                  as_attachment=True, 
-    #                  download_name='output.xml') 
+    sbol_data = send_file("test2.xml", 
+                     mimetype='application/xml', 
+                     as_attachment=True, 
+                     download_name='output.xml') 
         
-    return "hello"
+    return sbol_data
 
 def create_vector(doc, sequence):
     vector = sbol3.Component("Vector_Plasmid", sbol3.SBO_DNA)
@@ -84,18 +81,6 @@ def create_first_restriction_site(doc, enzyme_name):
     enzyme_sequence = sbol3.Sequence("first_restriction_site_enzyme", elements="TEST", encoding=sbol3.IUPAC_DNA_ENCODING)
     doc.add(enzyme_sequence)
 
-def create_second_restriction_site(doc, enzyme_name):
-    all_enzymes = Restriction.AllEnzymes
-    for enzyme in all_enzymes:
-        if enzyme.__name__ == enzyme_name:
-            print(f"Name: {enzyme_name}, URI: {enzyme.uri}")
-        
-
-    # enzyme = ed_restriction_enzyme(enzyme_name)
-    # doc.add(enzyme)
-
-    enzyme_type = "SBO_0000014"
-
     second_restriction_site_enzyme = sbol3.Component("second_restriction_enzyme", enzyme_type, type_uri=enzyme.uri)
     doc.add(second_restriction_site_enzyme)
 
@@ -103,16 +88,15 @@ def create_second_restriction_site(doc, enzyme_name):
     doc.add(enzyme_sequence)
 
 def attach_backbone(doc, insert_sequence, enzyme_name, is_linear):
-    all_enzymes = Restriction.AllEnzymes
-    enzyme_name
-    for enzyme in all_enzymes:
-        if enzyme.__name__ == enzyme_name:
-            print(f"Name: {enzyme_name}, URI: {enzyme.uri}")
-            enzyme_name = enzyme
-
     part_index = len(doc)+1
-    fusion_site_length = abs(enzyme.ovhg)
-
+    fusion_site_length = 0
+    enzyme_name
+    
+    # get fusion site length for enzyme
+    for enzyme in Restriction.AllEnzymes:
+        if enzyme.__name__ == enzyme_name:
+            enzyme_name = enzyme
+            fusion_site_length = abs(enzyme.ovhg)
     
     # turn sequence into component
     part = sbol3.Component(f'part{part_index}', sbol3.SBO_DNA, name=f'part{part_index}')
@@ -128,19 +112,13 @@ def attach_backbone(doc, insert_sequence, enzyme_name, is_linear):
     
     return part_in_bb
 
-def create_assembly_plan(doc, part_arr, vector_backbone, enzymeeeee):    
-    # all_enzymes = Restriction.AllEnzymes
-    # for enzyme in all_enzymes:
-    #     if enzyme.__name__ == enzyme_name:
-    #         enzyme_name = enzyme  
-        
-    SapI = ed_restriction_enzyme("SapI")
+def create_assembly_plan(doc, part_arr, vector_backbone, enzyme):    
     try:
         simple_assembly_plan = Assembly_plan_composite_in_backbone_single_enzyme(
             name='Modular_Cloning',
             parts_in_backbone=part_arr,
             acceptor_backbone=vector_backbone,
-            restriction_enzyme=SapI,
+            restriction_enzyme=enzyme,
             document=doc)
             
         simple_assembly_plan.run()

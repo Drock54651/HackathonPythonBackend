@@ -29,8 +29,11 @@ def getSBOL():
 
         create_vector(doc, vector_data)
         create_insert(doc, insert_data)
+        # part = attach_backbone(doc, insert_data, first_restriction_site_data, True)
+        # assembly_plan = create_assembly_plan(doc, [part], vector_data, first_restriction_site_data )
         # create_first_restriction_site(doc, first_restriction_site_data)
         # create_second_restriction_site(doc, second_restriction_site_data)
+        # assembly_plan.document.write("test2.xml")
         doc.write("test.xml")
         
         if SBOL_data is None:
@@ -43,12 +46,12 @@ def getSBOL():
         }
 
         
-    sbol_data = send_file("test.xml", 
-                     mimetype='application/xml', 
-                     as_attachment=True, 
-                     download_name='output.xml') 
+    # sbol_data = send_file("test2.xml", 
+    #                  mimetype='application/xml', 
+    #                  as_attachment=True, 
+    #                  download_name='output.xml') 
         
-    return sbol_data
+    return "hello"
 
 def create_vector(doc, sequence):
     vector = sbol3.Component("Vector", sbol3.SBO_DNA)
@@ -96,7 +99,7 @@ def create_second_restriction_site(doc, enzyme_name):
 
 def attach_backbone(doc, insert_sequence, enzyme_name, is_linear):
     part_index = len(doc)+1
-    fusion_site_length = abs(enzyme.ovhg)
+    fusion_site_length = abs(enzyme_name.ovhg)
     
     # turn sequence into component
     part = sbol3.Component(f'part{part_index}', sbol3.SBO_DNA)
@@ -109,7 +112,9 @@ def attach_backbone(doc, insert_sequence, enzyme_name, is_linear):
     part_in_bb, part_in_bb_seq = part_in_backbone_from_sbol(f'{part.name}_in_bb', part, [1,len(insert_sequence)], [], fusion_site_length, is_linear, name=f'{part.name}_in_bb')
     doc.add([part_in_bb, part_in_bb_seq])
 
-def create_assembly_plan(doc, part_arr, vector_backbone, enzyme)        
+    return part_in_bb
+
+def create_assembly_plan(doc, part_arr, vector_backbone, enzyme):      
     simple_assembly_plan = Assembly_plan_composite_in_backbone_single_enzyme(
         name='Modular Cloning',
         parts_in_backbone=part_arr,
@@ -118,6 +123,7 @@ def create_assembly_plan(doc, part_arr, vector_backbone, enzyme)
         document=doc)
         
     simple_assembly_plan.run()
+    return simple_assembly_plan
 
 if __name__ == '__main__':
   app.run(debug=True)

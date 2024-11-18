@@ -1,16 +1,19 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_file
 import sbol3
 from sbol_utilities import component
 from sbol_utilities.component import ed_restriction_enzyme, backbone, part_in_backbone,  part_in_backbone_from_sbol, \
     digestion, ligation, Assembly_plan_composite_in_backbone_single_enzyme, backbone_from_sbol
 from sbol_utilities.conversion import convert_from_genbank, convert3to2
 from Bio import Restriction
+import os
+
+
 
 
 app = Flask(__name__)
 
 @app.route("/", methods=['POST', 'GET'])
-def getSBOL():
+async def getSBOL():
     SBOL_data = {}
 
     # Convert DAMP Lab Canvas Parameters to SBOL 
@@ -29,8 +32,8 @@ def getSBOL():
 
         create_vector(doc, vector_data)
         create_insert(doc, insert_data)
-        create_first_restriction_site(doc, first_restriction_site_data)
-        create_second_restriction_site(doc, second_restriction_site_data)
+        # create_first_restriction_site(doc, first_restriction_site_data)
+        # create_second_restriction_site(doc, second_restriction_site_data)
         doc.write("test.xml")
         
         if SBOL_data is None:
@@ -42,7 +45,13 @@ def getSBOL():
             "Error": str(e)
         }
 
-    return jsonify(SBOL_data)  # Flask will convert this to JSON
+        
+    sbol_data = await send_file("test.xml", 
+                     mimetype='application/xml', 
+                     as_attachment=True, 
+                     download_name='output.xml') 
+        
+    return sbol_data
 
 def create_vector(doc, sequence):
     vector = sbol3.Component("Vector", sbol3.SBO_DNA)
@@ -62,16 +71,10 @@ def create_first_restriction_site(doc, enzyme_name):
         if enzyme.__name__ == enzyme_name:
             print(f"Name: {enzyme_name}, URI: {enzyme.uri}")
         
-    # enzyme = ed_restriction_enzyme(enzyme_name)
-    definition = f'http://rebase.neb.com/rebase/enz/{enzyme_name}.html'
-    enzyme = sbol3.ExternallyDefined(["SBO:0000176"], definition=enzyme.uri, name=enzyme_name)
-    doc.add(enzyme)
+    enzyme_type = "SBO_0000014"
 
-    #! GOOD
-    # enzyme_type = "SBO_0000014"
-
-    # first_restriction_site_enzyme = sbol3.Component("first_restriction_enzyme", enzyme_type, type_uri=enzyme.uri)
-    # doc.add(first_restriction_site_enzyme)
+    first_restriction_site_enzyme = sbol3.Component("first_restriction_enzyme", enzyme_type, type_uri=enzyme.uri)
+    doc.add(first_restriction_site_enzyme)
 
     enzyme_sequence = sbol3.Sequence("first_restriction_site_enzyme", elements="TEST", encoding=sbol3.IUPAC_DNA_ENCODING)
     doc.add(enzyme_sequence)
@@ -81,6 +84,7 @@ def create_second_restriction_site(doc, enzyme_name):
     for enzyme in all_enzymes:
         if enzyme.__name__ == enzyme_name:
             print(f"Name: {enzyme_name}, URI: {enzyme.uri}")
+        
 
     # enzyme = ed_restriction_enzyme(enzyme_name)
     # doc.add(enzyme)

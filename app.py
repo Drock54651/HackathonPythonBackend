@@ -31,11 +31,14 @@ def getSBOL():
         create_insert(doc, insert_data)
         part = attach_backbone(doc, insert_data, first_restriction_site_data, True)
 
-        # part2 = attach_backbone(doc, "tagc", second_restriction_site_data, True)
-        assembly_plan = create_assembly_plan(doc, [part], vector_data, first_restriction_site_data)
+        try:
+            part2 = attach_backbone(doc, "tagc", second_restriction_site_data, True)
+            assembly_plan = create_assembly_plan(doc, [part, part2], vector_data, first_restriction_site_data)
+            assembly_plan.document.write("test2.xml")
+        except Exception as e:
+            print(e)
         # create_first_restriction_site(doc, first_restriction_site_data)
         # create_second_restriction_site(doc, second_restriction_site_data)
-        assembly_plan.document.write("test2.xml")
         
         # doc.write("test.xml")
         
@@ -44,9 +47,8 @@ def getSBOL():
 
     except Exception as e:
         # Handle missing fields or errors with a fallback response
-        SBOL_data = {
-            "Error": str(e)
-        }
+        print(e)
+        
 
         
     # sbol_data = send_file("test2.xml", 
@@ -113,7 +115,8 @@ def attach_backbone(doc, insert_sequence, enzyme_name, is_linear):
 
     
     # turn sequence into component
-    part = sbol3.Component(f'part{part_index}', sbol3.SBO_DNA)
+    part = sbol3.Component(f'part{part_index}', sbol3.SBO_DNA, name=f'part{part_index}')
+    
     doc.add(part)
     part_seq = sbol3.Sequence(f'{part.name}Sequence', elements=insert_sequence, encoding=sbol3.IUPAC_DNA_ENCODING)
     doc.add(part_seq)

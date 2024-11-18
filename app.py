@@ -24,17 +24,20 @@ def getSBOL():
         insert_data = request_data['Insert']
 
         # The data will be Enzyme name
-        first_restriction_site_data = request_data['First Restriction Site']
-        second_restriction_site_data = request_data['Second Restriction Site']
+        first_restriction_site_data = request_data['First Restriction Site'] #SapI
+        second_restriction_site_data = request_data['Second Restriction Site'] #BsaI
 
         create_vector(doc, vector_data)
         create_insert(doc, insert_data)
-        # part = attach_backbone(doc, insert_data, first_restriction_site_data, True)
-        # assembly_plan = create_assembly_plan(doc, [part], vector_data, first_restriction_site_data )
+        part = attach_backbone(doc, insert_data, first_restriction_site_data, True)
+
+        # part2 = attach_backbone(doc, "tagc", second_restriction_site_data, True)
+        assembly_plan = create_assembly_plan(doc, [part], vector_data, first_restriction_site_data)
         # create_first_restriction_site(doc, first_restriction_site_data)
         # create_second_restriction_site(doc, second_restriction_site_data)
-        # assembly_plan.document.write("test2.xml")
-        doc.write("test.xml")
+        assembly_plan.document.write("test2.xml")
+        
+        # doc.write("test.xml")
         
         if SBOL_data is None:
             raise ValueError("No JSON received")
@@ -54,7 +57,7 @@ def getSBOL():
     return "hello"
 
 def create_vector(doc, sequence):
-    vector = sbol3.Component("Vector", sbol3.SBO_DNA)
+    vector = sbol3.Component("Vector_Plasmid", sbol3.SBO_DNA)
     doc.add(vector)
     vector_sequence = sbol3.Sequence("vectorSequence", elements=sequence, encoding=sbol3.IUPAC_DNA_ENCODING)
     doc.add(vector_sequence)
@@ -62,7 +65,7 @@ def create_vector(doc, sequence):
 def create_insert(doc, sequence):
     insert = sbol3.Component("Insert", sbol3.SBO_DNA)
     doc.add(insert)
-    insert_sequence = sbol3.Sequence("insert_sequence", elements=sequence, encoding=sbol3.IUPAC_DNA_ENCODING)
+    insert_sequence = sbol3.Sequence("Insert_Plasmid", elements=sequence, encoding=sbol3.IUPAC_DNA_ENCODING)
     doc.add(insert_sequence)
 
 def create_first_restriction_site(doc, enzyme_name):
@@ -98,8 +101,16 @@ def create_second_restriction_site(doc, enzyme_name):
     doc.add(enzyme_sequence)
 
 def attach_backbone(doc, insert_sequence, enzyme_name, is_linear):
+    all_enzymes = Restriction.AllEnzymes
+    enzyme_name
+    for enzyme in all_enzymes:
+        if enzyme.__name__ == enzyme_name:
+            print(f"Name: {enzyme_name}, URI: {enzyme.uri}")
+            enzyme_name = enzyme
+
     part_index = len(doc)+1
-    fusion_site_length = abs(enzyme_name.ovhg)
+    fusion_site_length = abs(enzyme.ovhg)
+
     
     # turn sequence into component
     part = sbol3.Component(f'part{part_index}', sbol3.SBO_DNA)
@@ -108,21 +119,30 @@ def attach_backbone(doc, insert_sequence, enzyme_name, is_linear):
     doc.add(part_seq)
     part.sequences = [ part_seq ]
 
-    #                                                           name,             part obj,   part locations(in bb), role, 
+    #                                                         #   name,             part obj,   part locations(in bb), role, 
     part_in_bb, part_in_bb_seq = part_in_backbone_from_sbol(f'{part.name}_in_bb', part, [1,len(insert_sequence)], [], fusion_site_length, is_linear, name=f'{part.name}_in_bb')
     doc.add([part_in_bb, part_in_bb_seq])
-
+    
     return part_in_bb
 
-def create_assembly_plan(doc, part_arr, vector_backbone, enzyme):      
-    simple_assembly_plan = Assembly_plan_composite_in_backbone_single_enzyme(
-        name='Modular Cloning',
-        parts_in_backbone=part_arr,
-        acceptor_backbone=vector_backbone,
-        restriction_enzyme=enzyme,
-        document=doc)
+def create_assembly_plan(doc, part_arr, vector_backbone, enzymeeeee):    
+    # all_enzymes = Restriction.AllEnzymes
+    # for enzyme in all_enzymes:
+    #     if enzyme.__name__ == enzyme_name:
+    #         enzyme_name = enzyme  
         
-    simple_assembly_plan.run()
+    SapI = ed_restriction_enzyme("SapI")
+    try:
+        simple_assembly_plan = Assembly_plan_composite_in_backbone_single_enzyme(
+            name='Modular_Cloning',
+            parts_in_backbone=part_arr,
+            acceptor_backbone=vector_backbone,
+            restriction_enzyme=SapI,
+            document=doc)
+            
+        simple_assembly_plan.run()
+    except Exception as e:
+        print(e)
     return simple_assembly_plan
 
 if __name__ == '__main__':

@@ -28,6 +28,7 @@ def getSBOL():
         create_insert(doc, insert_data)
         create_first_restriction_site(doc, first_restriction_site_data)
         create_second_restriction_site(doc, second_restriction_site_data)
+        doc.write("test.xml")
         
         if SBOL_data is None:
             raise ValueError("No JSON received")
@@ -43,25 +44,25 @@ def getSBOL():
 def create_vector(doc, data):
     vector = sbol3.Component("Vector", sbol3.SBO_DNA)
     doc.add(vector)
-    vector_sequence = sbol3.Sequence("vectorSequence", elements=data, encoding=sbol3.Sequence.IUPAC_DNA_ENCODING)
+    vector_sequence = sbol3.Sequence("vectorSequence", elements=data, encoding=sbol3.IUPAC_DNA_ENCODING)
     doc.add(vector_sequence)
 
 def create_insert(doc, data):
     insert = sbol3.Component("Insert", sbol3.SBO_DNA)
     doc.add(insert)
-    insert_sequence = sbol3.Sequence("insert_sequence", elements=data, encoding=sbol3.Sequence.IUPAC_DNA_ENCODING)
+    insert_sequence = sbol3.Sequence("insert_sequence", elements=data, encoding=sbol3.IUPAC_DNA_ENCODING)
     doc.add(insert_sequence)
 
 def create_first_restriction_site(doc, data):
     first_restriction_site_enzyme = sbol3.Component("first_restriction_enzyme", sbol3.SBO_BIOCHEMICAL_REACTION)
     doc.add(first_restriction_site_enzyme)
-    enzyme_sequence = sbol3.Sequence("first_restriction_site_enzyme", elements=data, encoding=sbol3.Sequence.IUPAC_DNA_ENCODING)
+    enzyme_sequence = sbol3.Sequence("first_restriction_site_enzyme", elements=data, encoding=sbol3.IUPAC_DNA_ENCODING)
     doc.add(enzyme_sequence)
 
 def create_second_restriction_site(doc, data):
     second_restriction_site_enzyme = sbol3.Component("second_restriction_enzyme", sbol3.SBO_BIOCHEMICAL_REACTION)
     doc.add(second_restriction_site_enzyme)
-    enzyme_sequence = sbol3.Sequence("second_restriction_site_enzyme", elements=data, encoding=sbol3.Sequence.IUPAC_DNA_ENCODING)
+    enzyme_sequence = sbol3.Sequence("second_restriction_site_enzyme", elements=data, encoding=sbol3.IUPAC_DNA_ENCODING)
     doc.add(enzyme_sequence)
 
         

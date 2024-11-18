@@ -94,8 +94,30 @@ def create_second_restriction_site(doc, enzyme_name):
     enzyme_sequence = sbol3.Sequence("second_restriction_site_enzyme", elements="TEST", encoding=sbol3.IUPAC_DNA_ENCODING)
     doc.add(enzyme_sequence)
 
-        
+def attach_backbone(doc, insert_sequence, enzyme_name, is_linear):
+    part_index = len(doc)+1
+    fusion_site_length = abs(enzyme.ovhg)
+    
+    # turn sequence into component
+    part = sbol3.Component(f'part{part_index}', sbol3.SBO_DNA)
+    doc.add(part)
+    part_seq = sbol3.Sequence(f'{part.name}Sequence', elements=insert_sequence, encoding=sbol3.IUPAC_DNA_ENCODING)
+    doc.add(part_seq)
+    part.sequences = [ part_seq ]
 
+    #                                                           name,             part obj,   part locations(in bb), role, 
+    part_in_bb, part_in_bb_seq = part_in_backbone_from_sbol(f'{part.name}_in_bb', part, [1,len(insert_sequence)], [], fusion_site_length, is_linear, name=f'{part.name}_in_bb')
+    doc.add([part_in_bb, part_in_bb_seq])
+
+def create_assembly_plan(doc, part_arr, vector_backbone, enzyme)        
+    simple_assembly_plan = Assembly_plan_composite_in_backbone_single_enzyme(
+        name='Modular Cloning',
+        parts_in_backbone=part_arr,
+        acceptor_backbone=vector_backbone,
+        restriction_enzyme=enzyme,
+        document=doc)
+        
+    simple_assembly_plan.run()
 
 if __name__ == '__main__':
   app.run(debug=True)

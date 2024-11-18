@@ -5,15 +5,12 @@ from sbol_utilities.component import ed_restriction_enzyme, backbone, part_in_ba
     digestion, ligation, Assembly_plan_composite_in_backbone_single_enzyme, backbone_from_sbol
 from sbol_utilities.conversion import convert_from_genbank, convert3to2
 from Bio import Restriction
-import os
-
-
 
 
 app = Flask(__name__)
 
 @app.route("/", methods=['POST', 'GET'])
-async def getSBOL():
+def getSBOL():
     SBOL_data = {}
 
     # Convert DAMP Lab Canvas Parameters to SBOL 
@@ -46,7 +43,7 @@ async def getSBOL():
         }
 
         
-    sbol_data = await send_file("test.xml", 
+    sbol_data = send_file("test.xml", 
                      mimetype='application/xml', 
                      as_attachment=True, 
                      download_name='output.xml') 

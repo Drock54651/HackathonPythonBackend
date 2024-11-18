@@ -27,16 +27,25 @@ def getSBOL():
         first_restriction_site_data = request_data['First Restriction Site'] #SapI
         second_restriction_site_data = request_data['Second Restriction Site'] #BsaI
 
-        create_vector(doc, vector_data)
-        create_insert(doc, insert_data)
-        part = attach_backbone(doc, insert_data, first_restriction_site_data, True)
-        part2 = attach_backbone(doc, "tagc", second_restriction_site_data, True)
+        vector_obj = create_vector(doc, vector_data)
 
-        part_arr = [part, part2]
+        part = attach_backbone(doc, insert_data, first_restriction_site_data, True)
+        part2 = attach_backbone(doc, "tagcaccgatagggc", second_restriction_site_data, True)
+        part3 = attach_backbone(doc, 'tcattgccatacgaaattccggatgagcattcatcaggcgggcaagaatgtgaataaaggccggataaaacttgtgcttatttttctttacggtctttaaaaaggccgtaatatccagctgaacggtctggttataggtacattgagcaactgactgaaatgcctcaaaatgttctttacgatgccattgggatatatcaacggtggtatatccagtgatttttttctccattttagcttccttagctcctgaaaatctcgataactcaaaaaatacgcccggtagtgatcttatttcattatggtgaaagttggaacctcttacgtgcccgatcaactcgagtgccacctgacgtctaagaaaccattattatcatgacattaacctataaaaataggcgtatcacgaggcagaatttcagataaaaaaaatccttagctttcgctaaggatgatttctggaattcggtctcgGGAGttgacggctagctcagtcctaggtacagtgctagcTACTCGAGaccctgcagtccggcaaaaaagggcaaggtgtcaccaccctgccctttttctttaaaaccgaaaagattacttcgcgttatgcaggcttcctcgctcactgactcgctgcgctcggtcgttcggctgcggcgagcggtatcagctcactcaaaggcggtaatacggttatccacagaatcaggggataacgcaggaaagaacatgtgagcaaaaggccagcaaaaggccaggaaccgtaaaaaggccgcgttgctggcgtttttccacaggctccgcccccctgacgagcatcacaaaaatcgacgctcaagtcagaggtggcgaaacccgacaggactataaagataccaggcgtttccccctggaagctccctcgtgcgctctcctgttccgaccctgccgcttaccggatacctgtccgcctttctcccttcgggaagcgtggcgctttctcatagctcacgctgtaggtatctcagttcggtgtaggtcgttcgctccaagctgggctgtgtgcacgaaccccccgttcagcccgaccgctgcgccttatccggtaactatcgtcttgagtccaacccggtaagacacgacttatcgccactggcagcagccactggtaacaggattagcagagcgaggtatgtaggcggtgctacagagttcttgaagtggtggcctaactacggctacactagaagaacagtatttggtatctgcgctctgctgaagccagttaccttcggaaaaagagttggtagctcttgatccggcaaacaaaccaccgctggtagcggtggtttttttgtttgcaagcagcagattacgcgcagaaaaaaaggatctcaagaagatcctttgatcttttctacggggtctgacgctcagtggaacgaaaactcacgttaagggattttggtcatgagattatcaaaaaggatcttcacctagatccttttaaattaaaaatgaagttttaaatcaatctaaagtatatatgagtaaacttggtctgacagctcgaggcttggattctcaccaataaaaaacgcccggcggcaaccgagcgttctgaacaaatccagatggagttctgaggtcattactggatctatcaacaggagtccaagcgagctcgatatcaaattacgccccgccctgccactcatcgcagtactgttgtaattcattaagcattctgccgacatggaagccatcacaaacggcatgatgaacctgaatcgccagcggcatcagcaccttgtcgccttgcgtataatatttgcccatggtgaaaacgggggcgaagaagttgtccatattggccacgtttaaatcaaaactggtgaaactcacccagggattggctgagacgaaaaacatattctcaataaaccctttagggaaataggccaggttttcaccgtaacacgccacatcttgcgaatatatgtgtagaaactgccggaaatcgtcgtggtattcactccagagcgatgaaaacgtttcagtttgctcatggaaaacggtgtaacaagggtgaacactatcccatatcaccagctcaccgtct',
+        first_restriction_site_data, True)
+
+        fusion_site_length = get_fusion_site_length(first_restriction_site_data)
+
+        #backbone preparation
+        vector_backbone, vector_backbone_seq = backbone_from_sbol('vector_bb', vector_obj, [680,1770], fusion_site_length, False, name='vector_bb')
+        doc.add([vector_backbone,vector_backbone_seq])
+        # print(vector_backbone.sequences)
+
+        part_arr = [part]
 
         enzyme = ed_restriction_enzyme(first_restriction_site_data)
 
-        assembly_plan = create_assembly_plan(doc, part_arr, vector_data, enzyme)
+        assembly_plan = create_assembly_plan(doc, part_arr, vector_backbone, enzyme)
         assembly_plan.document.write("test2.xml")
         
         if SBOL_data is None:
@@ -57,15 +66,10 @@ def getSBOL():
 
 def create_vector(doc, sequence):
     vector = sbol3.Component("Vector_Plasmid", sbol3.SBO_DNA)
-    doc.add(vector)
     vector_sequence = sbol3.Sequence("vectorSequence", elements=sequence, encoding=sbol3.IUPAC_DNA_ENCODING)
-    doc.add(vector_sequence)
-
-def create_insert(doc, sequence):
-    insert = sbol3.Component("Insert", sbol3.SBO_DNA)
-    doc.add(insert)
-    insert_sequence = sbol3.Sequence("Insert_Plasmid", elements=sequence, encoding=sbol3.IUPAC_DNA_ENCODING)
-    doc.add(insert_sequence)
+    vector.sequences = [ vector_sequence ]
+    doc.add([vector,vector_sequence])
+    return vector
 
 def create_first_restriction_site(doc, enzyme_name):
     all_enzymes = Restriction.AllEnzymes
@@ -87,16 +91,15 @@ def create_first_restriction_site(doc, enzyme_name):
     enzyme_sequence = sbol3.Sequence("second_restriction_site_enzyme", elements="TEST", encoding=sbol3.IUPAC_DNA_ENCODING)
     doc.add(enzyme_sequence)
 
-def attach_backbone(doc, insert_sequence, enzyme_name, is_linear):
-    part_index = len(doc)+1
-    fusion_site_length = 0
-    enzyme_name
-    
+def get_fusion_site_length(enzyme_name):
     # get fusion site length for enzyme
     for enzyme in Restriction.AllEnzymes:
         if enzyme.__name__ == enzyme_name:
-            enzyme_name = enzyme
-            fusion_site_length = abs(enzyme.ovhg)
+            return abs(enzyme.ovhg)
+
+def attach_backbone(doc, insert_sequence, enzyme_name, is_linear):
+    part_index = len(doc)+1
+    fusion_site_length = get_fusion_site_length(enzyme_name)
     
     # turn sequence into component
     part = sbol3.Component(f'part{part_index}', sbol3.SBO_DNA, name=f'part{part_index}')
@@ -119,8 +122,7 @@ def create_assembly_plan(doc, part_arr, vector_backbone, enzyme):
             parts_in_backbone=part_arr,
             acceptor_backbone=vector_backbone,
             restriction_enzyme=enzyme,
-            document=doc)
-            
+            document=doc)   
         simple_assembly_plan.run()
     except Exception as e:
         print(e)

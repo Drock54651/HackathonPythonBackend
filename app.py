@@ -5,9 +5,17 @@ from sbol_utilities.component import ed_restriction_enzyme, backbone, part_in_ba
     digestion, ligation, Assembly_plan_composite_in_backbone_single_enzyme, backbone_from_sbol
 from sbol_utilities.conversion import convert_from_genbank, convert3to2
 from Bio import Restriction
+from flask_cors import CORS
 
 
 app = Flask(__name__)
+CORS(app, resources={
+    r"/*": {
+        "origins": ["http://localhost:3100"],  # Your frontend origin
+        "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        "allow_headers": ["Content-Type", "Authorization"]
+    }
+})
 
 @app.route("/", methods=['POST', 'GET'])
 def getSBOL():
